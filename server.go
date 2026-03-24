@@ -32,10 +32,10 @@ func newServer(store store.Store, port int, cancel context.CancelFunc) *server {
 	}
 
 	mux.HandleFunc("GET /", s.handlerIndex)
-	mux.Handle("POST /api/login", s.authMiddleware(http.HandlerFunc(s.handlerLogin)))
-	mux.Handle("POST /api/shorten", s.authMiddleware(http.HandlerFunc(s.handlerShortenLink)))
-	mux.Handle("GET /api/stats", s.authMiddleware(http.HandlerFunc(s.handlerStats)))
-	mux.Handle("GET /api/urls", s.authMiddleware(http.HandlerFunc(s.handlerListURLs)))
+	mux.Handle("/api/login", requestLogger(logger)(http.HandlerFunc(s.handlerLogin)))
+	mux.Handle("/api/shorten", requestLogger(logger)(http.HandlerFunc(s.handlerShortenLink)))
+	mux.Handle("/api/stats", requestLogger(logger)(http.HandlerFunc(s.handlerStats)))
+	mux.Handle("/api/urls", requestLogger(logger)(http.HandlerFunc(s.handlerListURLs)))
 	mux.HandleFunc("GET /{shortCode}", s.handlerRedirect)
 	mux.HandleFunc("POST /admin/shutdown", s.handlerShutdown)
 
