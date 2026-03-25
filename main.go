@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
+	"io"
 	"log"
 	"os"
 	"os/signal"
@@ -25,26 +27,22 @@ func main() {
 }
 
 func run(ctx context.Context, cancel context.CancelFunc, httpPort int, dataDir string) int {
-	standardLogger := log.New(os.Stderr, "DEBUG: ", log.LstdFlags)
-
-	file, err := os.OpenFile("linko.access.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	logger, err := initializeLogger(os.Getenv("LINKO_LOG_FILE"))
 	if err != nil {
-		standardLogger.Printf("Failed to open access log file:", err)
+		fmt.Fprintf(os.Stderr, "failed to initialize logger: %v\n", err)
 		return 1
 	}
-	defer file.Close()
 
-	accessLogger := log.New(file, "INFO: ", log.LstdFlags)
-	st, err := store.New(dataDir, standardLogger)
+	st, err := store.New(dataDir, logger)
 	if err != nil {
-		standardLogger.Printf("failed to create store: %v\n", err)
+		logger.Printf("failed to create store: %v\n", err)
 		return 1
 	}
-	s := newServer(*st, httpPort, cancel, accessLogger)
+	s := newServer(*st, httpPort, cancel, logger)
 	var serverErr error
 	go func() {
 		serverErr = s.start()
-		accessLogger.Printf("Linko is running on http://localhost:%d\n", httpPort)
+		logger.Printf("Linko is running on http://localhost:%d\n", httpPort)
 	}()
 
 	<-ctx.Done()
@@ -52,13 +50,25 @@ func run(ctx context.Context, cancel context.CancelFunc, httpPort int, dataDir s
 	defer cancel()
 
 	if err := s.shutdown(shutdownCtx); err != nil {
-		standardLogger.Printf("failed to shutdown server: %v\n", err)
+		logger.Printf("failed to shutdown server: %v\n", err)
 		return 1
 	}
 	if serverErr != nil {
-		standardLogger.Printf("server error: %v\n", serverErr)
+		logger.Printf("server error: %v\n", serverErr)
 		return 1
 	}
-	accessLogger.Println("Linko is shutting down")
+	logger.Println("Linko is shutting down")
 	return 0
+}
+
+func initializeLogger(logFile string) (*log.Logger, error) {
+	if logFile != "" {
+		file, err := os.OpenFile(logFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
+		if err != nil {
+			return nil, fmt.Errorf("failed to open log file: %w", err)
+		}
+		multiWriter := io.MultiWriter(os.Stderr, file)
+		return log.New(multiWriter, "", log.LstdFlags), nil
+	}
+	return log.New(os.Stderr, "", log.LstdFlags), nil
 }
