@@ -12,7 +12,7 @@ import (
 	"strings"
 	"sync"
 
-	"boot.dev/linko/internal/store"
+	"github.com/greg-beach/linko-starter/internal/store"
 	"golang.org/x/crypto/bcrypt"
 )
 

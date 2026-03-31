@@ -12,7 +12,7 @@ import (
 	"syscall"
 	"time"
 
-	"boot.dev/linko/internal/store"
+	"github.com/greg-beach/linko-starter/internal/store"
 	pkgerr "github.com/pkg/errors"
 )
 

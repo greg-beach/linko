@@ -1,4 +1,4 @@
-module boot.dev/linko
+module github.com/greg-beach/linko-starter
 
 go 1.26
 
