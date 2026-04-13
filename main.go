@@ -15,6 +15,8 @@ import (
 	linkoerr "github.com/greg-beach/linko-starter/internal"
 	build "github.com/greg-beach/linko-starter/internal/build"
 	"github.com/greg-beach/linko-starter/internal/store"
+	"github.com/lmittmann/tint"
+	"github.com/mattn/go-isatty"
 	pkgerr "github.com/pkg/errors"
 )
 
@@ -83,9 +85,10 @@ type closeFunc func() error
 
 func initializeLogger(logFile string) (*slog.Logger, closeFunc, error) {
 	handlers := []slog.Handler{
-		slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
+		tint.NewHandler(os.Stderr, &tint.Options{
 			Level:       slog.LevelDebug,
 			ReplaceAttr: replaceAttr,
+			NoColor:     !(isatty.IsCygwinTerminal(os.Stderr.Fd()) || isatty.IsTerminal(os.Stderr.Fd())),
 		}),
 	}
 	closers := []closeFunc{}
